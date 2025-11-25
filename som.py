@@ -47,14 +47,10 @@ class SOM:
         Returns:
             bmu_idx: Tuple (i, j) of BMU position in the mesh
         """
-        # Calculate Euclidean distance to all neurons
-        distances = np.zeros((self.n_x, self.n_y))
-
-        for i in range(self.n_x):
-            for j in range(self.n_y):
-                w = self.weights[i, j, :]
-                distances[i, j] = np.linalg.norm(x - w)
-
+        # Vectorized calculation: (n_x, n_y, input_dim) - (input_dim,) -> (n_x, n_y, input_dim)
+        diff = self.weights - x
+        # Calculate Euclidean distance: (n_x, n_y)
+        distances = np.linalg.norm(diff, axis=2)
         # Find minimum distance position
         bmu_idx = np.unravel_index(np.argmin(distances), distances.shape)
 
@@ -88,18 +84,12 @@ class SOM:
         Returns:
             alpha: Array of shape (n_x, n_y) with neighborhood values
         """
-        alpha = np.zeros((self.n_x, self.n_y))
         bmu_weight = self.weights[bmu_idx[0], bmu_idx[1], :]
 
-        for i in range(self.n_x):
-            for j in range(self.n_y):
-                w_neighbor = self.weights[i, j, :]
-
-                # Calculate squared distance in weight space
-                dist_sq = np.sum((bmu_weight - w_neighbor) ** 2)
-
-                # Gaussian function
-                alpha[i, j] = np.exp(-dist_sq / (2 * sigma**2))
+        # Vectorized calculation
+        diff = self.weights - bmu_weight  # (n_x, n_y, input_dim)
+        dist_sq = np.sum(diff**2, axis=2)  # (n_x, n_y)
+        alpha = np.exp(-dist_sq / (2 * sigma**2))
 
         return alpha
 
@@ -114,18 +104,16 @@ class SOM:
             bmu_idx: BMU position (i, j)
             alpha: Neighborhood function values
         """
-        for i in range(self.n_x):
-            for j in range(self.n_y):
-                w = self.weights[i, j, :]
+        # Vectorized update for all neurons
+        # alpha: (n_x, n_y), need to broadcast to (n_x, n_y, input_dim)
+        alpha_expanded = alpha[:, :, np.newaxis]  # (n_x, n_y, 1)
 
-                if (i, j) == bmu_idx:
-                    # Rule 1: Update winner neuron
-                    self.weights[i, j, :] = w + self.learning_rate * (x - w)
-                else:
-                    # Rule 2: Update neighbors with Gaussian weighting
-                    self.weights[i, j, :] = w + self.learning_rate * alpha[i, j] * (
-                        x - w
-                    )
+        # Calculate update: η * α * (x - w)
+        diff = x - self.weights  # (n_x, n_y, input_dim)
+        update = self.learning_rate * alpha_expanded * diff
+
+        # Apply update
+        self.weights += update
 
     def _calculate_quantization_error(self, data):
         """
