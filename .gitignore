@@ -51,9 +51,6 @@ results/*.png
 # Keep directory structure
 !results/.gitkeep
 
-# Data (if large or sensitive)
-# data/*.txt  # Uncomment if you don't want to commit data
-
 # Temporary files
 *.tmp
 *.bak
