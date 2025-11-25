@@ -1,0 +1,8 @@
+# Hopfield Image Recovery - 專案依賴套件
+# Python 3.8+
+
+# 核心數值計算
+numpy>=1.20.0
+
+# 視覺化與繪圖
+matplotlib>=3.3.0
