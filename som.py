@@ -75,7 +75,9 @@ class SOM:
         """
         Calculate Gaussian neighborhood function α^(Ω) for all neurons
 
-        α^(Ω) = e^(-||w^(v) - w^(Ω)||² / 2σ(t)²)
+        Uses grid-space distance (standard SOM approach):
+        α^(Ω) = e^(-d_grid² / 2σ(t)²)
+        where d_grid is the Euclidean distance in grid coordinates
 
         Args:
             bmu_idx: Tuple (i, j) of BMU position
@@ -84,11 +86,15 @@ class SOM:
         Returns:
             alpha: Array of shape (n_x, n_y) with neighborhood values
         """
-        bmu_weight = self.weights[bmu_idx[0], bmu_idx[1], :]
+        # Create coordinate grids for all neurons
+        i_coords, j_coords = np.meshgrid(
+            np.arange(self.n_x), np.arange(self.n_y), indexing="ij"
+        )
 
-        # Vectorized calculation
-        diff = self.weights - bmu_weight  # (n_x, n_y, input_dim)
-        dist_sq = np.sum(diff**2, axis=2)  # (n_x, n_y)
+        # Calculate squared grid distance from BMU to all neurons
+        dist_sq = (i_coords - bmu_idx[0]) ** 2 + (j_coords - bmu_idx[1]) ** 2
+
+        # Calculate Gaussian neighborhood
         alpha = np.exp(-dist_sq / (2 * sigma**2))
 
         return alpha
