@@ -44,7 +44,7 @@ def plot_data(data, title="Dataset", save_path=None):
     plt.show()
 
 
-def (data, weights, title="SOM Result", save_path=None):
+def plot_som(data, weights, title="SOM Result", save_path=None):
     """
     Plot dataset with SOM weight mesh overlay
 
